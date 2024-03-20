@@ -14,3 +14,5 @@ model
 node_modules
 sources
 test_data
+.DS_Store
+.ruff_cache
