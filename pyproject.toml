@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "multi-mediawiki-rag"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{ include = "multi_mediawiki_rag", from = "src" }]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+langchain = "^0.1.13"
+chromadb = "^0.4.24"
+mwtypes = {git = "https://github.com/mediawiki-utilities/python-mwtypes", rev = "updates_schema_0.11"}
+mwxml = {git = "https://github.com/gdedrouas/python-mwxml", rev = "xml_format_0.11"}
+mwparserfromhell = "^0.6.6"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.3.3"
+pre-commit = "^3.6.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,50 +1,16 @@
----
+default_install_hook_types: [pre-commit]
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+  - repo: https://github.com/python-poetry/poetry
+    rev: '1.6.1'
     hooks:
-    - id: check-added-large-files
-    - id: check-ast
-    - id: check-merge-conflict
-    - id: check-yaml
-    - id: debug-statements
-    - id: end-of-file-fixer
-    - id: forbid-submodules
-    - id: sort-simple-yaml
-      files: config.yaml
-    - id: trailing-whitespace
-  - repo: https://github.com/hadolint/hadolint
-    rev: v2.12.1-beta
+      - id: poetry-check
+      - id: poetry-lock
+      - id: poetry-export
+        args: ['--dev', '-f', 'requirements.txt', '-o', 'requirements.txt']
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.1.3
     hooks:
-      - id: hadolint-docker
-        args: ["--config", ".github/linters/.hadolint.yaml"]
-  - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.38.0
-    hooks:
-    - id: markdownlint
-      args: ["--config", ".github/linters/.markdown-lint.yaml"]
-  - repo: https://github.com/ambv/black
-    rev: 23.12.1
-    hooks:
-      - id: black
-  - repo: local
-    hooks:
-      - id: pylint
-        name: pylint
-        entry: pylint
-        language: system
-        types: [python]
-        args: ["--rcfile=.github/linters/.python-lint"]
-      - id: pytest
-        name: pytest
-        entry: pytest
-        language: system
-        types: [python]
-        args: ["test/test_app.py", "test/test_embed.py", "-W", "ignore::DeprecationWarning"]
-        pass_filenames: false
-      - id: cypress
-        name: cypress
-        entry: bash
-        language: system
-        types_or: [ts, python]
-        args: ["cypress/test.sh"]
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
