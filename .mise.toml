@@ -1,5 +1,6 @@
 [tools]
 python = "latest"
+poetry = { version = "latest", pyproject = "pyproject.toml" }
 
 [env]
 _.python.venv = ".venv"
