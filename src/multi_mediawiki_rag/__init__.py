@@ -1,25 +1,74 @@
-from langchain_community.document_loaders import MWDumpLoader
+import os
 from pathlib import Path
 
-# package_dir = Path(path.abspath(path.dirname(__file__)))
-# print(package_dir)
-# sources_dir = Path.cwd()
+import chromadb
+from langchain_community.embeddings import (
+    OllamaEmbeddings,
+)
+from langchain_community.vectorstores import Chroma
 
-# load each file in package_dir / sources
-# just do 1 for now as a test
-documents = None
-for file in Path.cwd().glob("./sources/*"):
-    print(file)
-    loader = MWDumpLoader(
-        file_path=file,
+from loguru import logger
+
+from .loader import LoggingMWDumpLoader
+from .splitter import LoggingSemanticChunker
+
+LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG")
+
+# logger.remove()
+# logger.add(sys.stdout, format="{time} {level} {message}", level="DEBUG")
+
+CHROMA_HOST = os.getenv("CHROMA_HOST", "localhost")
+CHROMA_PORT = os.getenv("CHROMA_PORT", 8000)
+
+chroma = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)
+
+# splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=10)
+embeddings = OllamaEmbeddings(model="mistral:latest")
+splitter = LoggingSemanticChunker(embeddings, breakpoint_threshold_type="percentile")
+
+t_start = os.times()
+
+
+def load_and_split_wiki(file_path: Path):
+    logger.debug("loading and splitting wiki")
+    wiki_loader = LoggingMWDumpLoader(
+        file_path=file_path,
         encoding="utf8",
-        namespaces=[
-            0
-        ],  # Optional list to load only specific namespaces. Loads all namespaces by default.
-        skip_redirects=True,  # will skip over pages that just redirect to other pages (or not if False)
-        stop_on_error=False,  # will skip over pages that cause parsing errors (or not if False)
+        namespaces=[0],
+        skip_redirects=True,
+        stop_on_error=False,
     )
-    documents = loader.load()
-    break
+    docs = wiki_loader.load()
+    logger.debug(f"Loaded {docs} documents from {file_path}.")
+    s = splitter.split_documents(docs)
+    logger.debug(f"Loaded {len(s)} documents from {file_path}.")
+    return s
 
-print(f"You have {len(documents)} document(s) in your data ")
+
+def embed_mediawiki_dump(file_path: Path):
+    collection_name = file_path.stem
+    # fix this gross shit
+    try:
+        db = chroma.get_collection(collection_name)
+        print(f"{collection_name} already exists and contains {db.count()} documents.")
+        if db.count() > 0 and os.getenv("RESET") != "TRUE":
+            return db
+        print(f"Collection {collection_name} is empty, re-embedding.")
+    except Exception as e:
+        print(e)
+        print(f"Creating {collection_name}, probably b/c it didn't exist.")
+
+    splits = load_and_split_wiki(file_path)
+
+    return Chroma.from_documents(
+        splits[:20],
+        embeddings,
+        client=chroma,
+        collection_name=collection_name,
+    )
+
+
+# if __name__ == "__main__":
+#     for f in Path.cwd().glob("./sources/*.xml"):
+#         print(f"Processing {f}")
+#         embed_mediawiki_dump(f)
