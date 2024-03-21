@@ -1,0 +1,14 @@
+[tools]
+python = "latest"
+
+[env]
+_.python.venv = ".venv"
+
+[tasks."start:db"]
+run = "chroma run --path ./.chroma_store"
+
+[tasks.start]
+run = "python -m multi_mediawiki_rag"
+
+[tasks."reset:db"]
+run = "rm -rf ./.chroma_store"
